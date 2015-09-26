@@ -3,8 +3,9 @@
 #include <vector>
 #include <random>
 #include <string>
+#include <exception>
 
-
+using std::exception;
 using std::vector;
 
 struct TThreadArg {
@@ -58,7 +59,7 @@ void* Handle(void* args) {
     TThreadArg ThrdArg = *((TThreadArg*) args);
     delete (TThreadArg*)args;
     size_t IterNumber = 1;
-    vector<vector<int>> Field;
+    vector<vector<int>> Field = ;
     while (!(*end)) {
         IterNumer = 1;
         while (!(*Stop)) {
@@ -121,6 +122,7 @@ void master() {
     size_t Height;
     size_t Width;
     GetData(ThreadsCount, Height, Width, FieldStable);
+    FieldTemporary = FieldStable;
     vector<pthread_t> Threads(ThreadsCount);
     pthread_barrier_t UpdateBarrier, UpdateStableBarrierBarrier;
     pthread_barrier_init(&UpdateBarrier, nullptr, ThreadsCount);
@@ -130,16 +132,24 @@ void master() {
     while (std::cin >> Request) {
     //Need partition
         if (Request == "START") {
-          
-            for (size_t ThrdNum = 0; ThrdNum < ThreadsCount; ++ThrdNum) {
-                size_t CellsForThread = Heigth * Width / ThreadsCount;
-                size_t StartingCell = ThrdNum * CellsForThread;
-                pthread_create(&Threads[ThrdNum], NULL, Handle, (void*)//arg    }
-            for (size_t ThrdNum = 0; ThrdNum < ThreadsCount; ++ThrdNum) {
-                pthread_join(Threads[ThrdNum], NULL);
+            if (Started)
+                throw std::invalid_argument("Already started");
+            else {
+                for (size_t ThrdNum = 0; ThrdNum < ThreadsCount; ++ThrdNum) {
+                    Arg = new TThreadArg;
+                    Arg.GlobalFieldPtr = &FieldTemporary;
+                    Arg.GlobalStableFieldPtr = &FieldStable;
+                    pthread_create(&Threads[ThrdNum], NULL, Handle, (void*)//arg    }
+                
             }
+        } else if (Request ) {
+        
+
         }
     }
+    for (size_t ThrdNum = 0; ThrdNum < ThreadsCount; ++ThrdNum) {
+                    pthread_join(Threads[ThrdNum], NULL);
+        }
 }
 
 int main() {
