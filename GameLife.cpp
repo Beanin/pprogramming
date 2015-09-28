@@ -119,6 +119,7 @@ void master() {
     size_t ThreadsCount;
     vector<vector<int>> FieldTemporary;
     vector<vector<int>> FieldStable;
+    vector<vector<int>> StartField;
     size_t Height;
     size_t Width;
     GetData(ThreadsCount, Height, Width, FieldStable);
@@ -128,23 +129,30 @@ void master() {
     pthread_barrier_init(&UpdateBarrier, nullptr, ThreadsCount);
     pthread_barrier_init(&UpdateStableBarrier, nullptr, ThreadsCount);
     std::string Request;
-    bool Started = False;
+    size_t IterCount;
+    bool Started = false;
+    bool Stop = true;
+    bool End = false;
     while (std::cin >> Request) {
     //Need partition
         if (Request == "START") {
             if (Started)
                 throw std::invalid_argument("Already started");
-            else {
-                for (size_t ThrdNum = 0; ThrdNum < ThreadsCount; ++ThrdNum) {
-                    Arg = new TThreadArg;
-                    Arg.GlobalFieldPtr = &FieldTemporary;
-                    Arg.GlobalStableFieldPtr = &FieldStable;
-                    pthread_create(&Threads[ThrdNum], NULL, Handle, (void*)//arg    }
-                
+            for (size_t ThrdNum = 0; ThrdNum < ThreadsCount; ++ThrdNum) {
+                Arg = new TThreadArg;
+                Arg.GlobalFieldPtr = &FieldTemporary;
+                Arg.GlobalStableFieldPtr = &FieldStable;
+                Arg.UpdateStableBarrier = &UpdateStableBarrier;
+                Arg.UpdateBarrier = &UpdateBarrier;
+                Arg.
+                if (pthread_create(&Threads[ThrdNum], NULL, Handle, (void*) Arg)) {
+                    perror("pthread_create");
+                    throw std::runtime_error("pthread_create");
+                }
             }
-        } else if (Request ) {
-        
-
+        } else if (Request == "RUN") {
+            std::cin >> IterCount;
+            
         }
     }
     for (size_t ThrdNum = 0; ThrdNum < ThreadsCount; ++ThrdNum) {
