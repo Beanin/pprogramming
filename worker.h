@@ -1,17 +1,17 @@
 #include <vector>
 #include <pthread.h>
 #include <memory>
-#include <queue>
+#include <deque>
+#include <iostream>
 
-typedef enum {WAITING, RUNNING, STOPPING, STOPPED, ENDED} TState;
+typedef enum {WAITING, RUNNING, STOPPED, ENDED} TState;
 
 using std::vector;
 using std::shared_ptr;
-using std::queue;
+using std::deque;
 
 class BaseWorker {
 public:
-
     /*for (size_t i = 1; i < OldField.size() - 1; ++i) {
       for (size_t j = 1; j < OldField[0].size() - 1; ++j) 
         OldField[i][j] = Field[i-1][j-1];
@@ -22,26 +22,24 @@ public:
       OldField[OldField.size() - 1][i] = (*recB)[i];
     }*/
    
-  virtual void* Handle();
-  virtual void Init(); 
-  virtual void TakeRequest() = 0;
+  void* Handle();
+  void HandleRequest();  
+  void MasterSync();
+
+  virtual void Report() = 0;
+  virtual void TakeRequests() = 0;
   virtual void SendCalculations() = 0;
   virtual void ReceiveCalculations() = 0;
-
-  void Report();
-  virtual void HandleRequest() = 0;  
-  virtual void StopWait() = 0;
   virtual void CollabSync() = 0;
-  virtual void MasterSync() = 0;
+  virtual void WakeUpMaster() = 0;
   virtual void SendCommonReport() = 0;
   virtual void SendFinalReport() = 0;
   virtual void Calculate() = 0;
-  virtual ~BaseWorker() = default;
   virtual void Sleep() = 0;
-  virtual void End() = 0;
-  class ReportConfig;
-  class CollabConfig;
   
+  virtual void HandleOtherRequests() {}
+  
+  virtual ~BaseWorker() = default;
 protected:
   vector<vector<int>>> Field;
   vector<vector<int>>> OldField;
@@ -50,16 +48,38 @@ protected:
   size_t Height, Width;
   unsigned int Id;
   TState State;
-  queue<BaseRequest> Requests;
-  ReportConfig Master;
-  ReportConfig Sender;
-  ReportConfig Receiver;
-  bool ReqDone;
+  deque<BaseRequest> Requests;
 };
 
-class ThreadWorker : public BaseWorker {
+
+
+class ThreadWorkerData
+{
+  pthread_barrier_t* WorkersBarrier;
+  pthread_mutex_t* RequestsLock;
+  pthread_mutex_t WorkersSleepLock;
+  pthread_cond_t* WorkersSleepCV;
+  pthread_mutex_t
+
+};
+
+class ThreadWorker : public BaseWorker, public ThreadWorkerData 
+{
 public:
-  ThreadWorker();
+  virtual void LockQueue(); 
+  virtual MasterSync() override;
+  virtual void Report() override;
+  virtual void TakeRequests() override;
+  virtual void SendCalculations() override;
+  virtual void ReceiveCalculations() override;
+  virtual void CollabSync() override;
+  virtual void WakeUpMaster() override;
+  virtual void SendCommonReport() override;
+  virtual void SendFinalReport() override;
+  virtual void Calculate() override;
+  virtual void Sleep() override;
+  TakeRequests();
+ /* ThreadWorker();
   ThreadWorker(unsigned int id, vector<vector<int>>& field, vector<int>* sendT, vector<int>* sendB, vector<int>* recT,
                vector<int>* recB, BaseRequest* request, pthread_barrier_t* barrier, pthread_mutex_t* reqLock, 
                pthread_cond_t reqCV, pthread_mutex_t* stopLock, pthread_cond_t* stopCV, bool* updating, pthread_t thrid);
@@ -85,5 +105,5 @@ protected:
   pthread_cond_t* ReqCV; 
   pthread_mutex_t* ReqLock;
   pthread_t Thrid;
-  BaseRequest StoredRequest;
+  BaseRequest StoredRequest;*/
 };

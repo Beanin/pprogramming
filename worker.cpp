@@ -24,24 +24,46 @@ void* BaseWorker::Handle()
   }    
 }
 
- 
+void BaseWorker::MasterSync()
+{
+  CollabSync();
+  WakeUpMaster();
+}
+
 void BaseWorker::HandleRequest()
 {
-  if (State == RUNNING)
+  if (Requests.front() == "RUN" && State == STOPPED)
+  {
+    IterNumber = 0;
+    IterCount = Requests.front().GetIterCount();
+    State = RUNNING;
+    Requests.pop_front();
+  }
+  if (Requests.empty() && State == RUNNING)
   {
     Calculate();
     CollabSync();
     SendCalculations();
     ReceiveCalculations();
+    IterNumber++;
+    if (IterNumber == IterCount)
+    {
+      Requests.push_front(BaseRequest("STOP"));
+    }
   }
-  else if (State == STOPPING)
+  if (Requests.front() == "STOP" && State == RUNNING))
   {
     SendFinalReport();
     State = STOPPED;
+    Requests.pop_front();
   }
+  else if (Requests.front() == "QUIT" && State == STOPPED)
+  {
+    State = ENDED;
+  } 
+  else 
+    HandleOtherRequests();
 }
-
-
 
 size_t ThreadWorker::NeighboursCount(size_t x, size_t y) 
 {

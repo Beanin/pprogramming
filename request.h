@@ -1,6 +1,16 @@
 #include <ctime>
 #include <string>
 
+/*
+  STOP
+  START
+  RUN X
+  QUIT
+
+  STATUS
+  HELP
+ */
+  
 class BaseRequest { 
 public:
   BaseRequest(std::string type, size_t IterCount_ = 0):Type(type), IterCount(IterCount_) {
