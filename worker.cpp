@@ -11,40 +11,38 @@
 
 void* BaseWorker::Handle() 
 {
-  HandleRequest();
   while (State != ENDED) 
   {
+    if (State != RUNNING && Requests.empty()) 
+    {
+      Sleep();
+    }
     TakeRequest();
     HandleRequest();
-    SendCalculations();
-    ReceiveCalculations();
-    ReceiveRequest();
     Report();
+    CollabSync();
   }    
 }
 
-ThreadWorker::ThreadWorker(vector<vector<int>>& field, vector<int>* sendT, vector<int>* sendB, vector<int>* recT
-                           vector<int>* recB, BaseRequest* request, pthread_barrier_t* barrier, pthread_mutex_t stopLock, pthread_cond_t* stopCV,
-                           pthread_mutex_t* reqLock, pthread_cond_t* reqCV, bool* updating, pthread_t thrid)
-  : SendField(&field)
-  , Request(request)
-  , Barrier(barrier)
-  , StopLock(stopLock)
-  , StopCV(stopCV)
-  , ReqLock(reqLock)
-  , ReqCV(reqCV)
-  , Updating(updating)
-  , Reported(false)
-  , Thrid(thrid)
+ 
+void BaseWorker::HandleRequest()
 {
-  BaseWorker(unsigned int id, vector<vector<int>>& field, vector<int>* recT, vector<int>* recB,
-             vector<int>* sendT, vector<int>* sendB);
+  if (State == RUNNING)
+  {
+    Calculate();
+    CollabSync();
+    SendCalculations();
+    ReceiveCalculations();
+  }
+  else if (State == STOPPING)
+  {
+    SendFinalReport();
+    State = STOPPED;
+  }
 }
 
 
 
-
- 
 size_t ThreadWorker::NeighboursCount(size_t x, size_t y) 
 {
   size_t Cnt = 0;
@@ -60,7 +58,8 @@ size_t ThreadWorker::NeighboursCount(size_t x, size_t y)
 }
 
 
-void TThreadWorker::HandleRequest() 
+
+/*void TThreadWorker::HandleRequest() 
 { 
   if (State == RUNNING) 
   {
@@ -87,7 +86,7 @@ void TThreadWorker::HandleRequest()
     }
 
   }  
-}
+}*/
 
 void TThreadWorker::SendCalculations() {
   if (State == RUNNING) 
@@ -148,27 +147,7 @@ void TThreadWorker::ReceiveRequest()
   }     
 }
 
-void BaseWorker::Report() 
-{
-  if (State == RUNNING) 
-  {
-    if (IterCount == IterNumber) 
-      State = STOPPED;
-    else 
-    {
-      SendCommonReport();
-    }
-  }
-  if (State == STOPPED) 
-  {
-    if (!Reported) 
-    {
-      SendFinalReport();
-      Reported = true; 
-      StopWait();
-    }
-  }
-} 
+
 
 
 

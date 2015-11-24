@@ -1,29 +1,18 @@
 #include <vector>
 #include <pthread.h>
 #include <memory>
+#include <queue>
 
-typedef enum {WAITING, RUNNING, STOPPED , ENDED} TState;
+typedef enum {WAITING, RUNNING, STOPPING, STOPPED, ENDED} TState;
 
 using std::vector;
 using std::shared_ptr;
+using std::queue;
 
 class BaseWorker {
 public:
-  BaseWorker(unsigned int id, vector<vector<int>>& field, vector<int>* recT, vector<int>* recB, vector<int>* sendT, vector<int>* sendB)
-    : Field(field->size() + 2, vector<int>(field[0].size()))
-    , OldField(field->size() + 2, vector<int>(field[0].size()))
-    , RecT(recT)
-    , RecB(recB) 
-    , SendT(sendT)
-    , SendB(sendB) 
-    , IterNumber(0)
-    , Height(field.size())
-    , Width(field[0].size())
-    , Id(id)
-    , IterCount(0)   
-    , State(WAITING)
-  {
-    for (size_t i = 1; i < OldField.size() - 1; ++i) {
+
+    /*for (size_t i = 1; i < OldField.size() - 1; ++i) {
       for (size_t j = 1; j < OldField[0].size() - 1; ++j) 
         OldField[i][j] = Field[i-1][j-1];
 
@@ -31,36 +20,41 @@ public:
     for (size_t i = 1; i < OldField[0].size() - 1; ++i) {
       OldField[0][i] = (*recT)[i];
       OldField[OldField.size() - 1][i] = (*recB)[i];
-    }
-
-  } 
+    }*/
+   
   virtual void* Handle();
   virtual void Init(); 
   virtual void TakeRequest() = 0;
   virtual void SendCalculations() = 0;
   virtual void ReceiveCalculations() = 0;
 
-  void Report();так что нисче
+  void Report();
   virtual void HandleRequest() = 0;  
   virtual void StopWait() = 0;
+  virtual void CollabSync() = 0;
+  virtual void MasterSync() = 0;
+  virtual void SendCommonReport() = 0;
+  virtual void SendFinalReport() = 0;
+  virtual void Calculate() = 0;
   virtual ~BaseWorker() = default;
-  
+  virtual void Sleep() = 0;
+  virtual void End() = 0;
+  class ReportConfig;
+  class CollabConfig;
   
 protected:
   vector<vector<int>>> Field;
   vector<vector<int>>> OldField;
-  vector<int>* RecT;
-  vector<int>* SendT;
-  vector<int>* SendB;
-  vector<int>* RecB; 
   size_t IterNumber;  
+  size_t IterCount;
   size_t Height, Width;
   unsigned int Id;
-  size_t IterCount;
   TState State;
-  virtual void SendCommonReport() = 0;
-  virtual void SendFinalReport() = 0;
-  BaseRequest* Request;
+  queue<BaseRequest> Requests;
+  ReportConfig Master;
+  ReportConfig Sender;
+  ReportConfig Receiver;
+  bool ReqDone;
 };
 
 class ThreadWorker : public BaseWorker {

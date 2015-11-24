@@ -13,7 +13,7 @@ public:
     return Type;     
   }
   size_t GetIterCount() {
-    Type == "RUN";
+    return (Type == "RUN") ? IterCount : 0;
   }
   bool operator==(std::string s)
     return (type.compare(s) == 0);
@@ -21,7 +21,7 @@ public:
 private: 
   time_t CreationTime;
   std::string Type;
-  size_t IterNumber;
+  size_t IterCount;
 };
 
 BaseRequest::~BaseRequest() {}
