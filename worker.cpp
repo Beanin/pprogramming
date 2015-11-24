@@ -79,7 +79,15 @@ size_t ThreadWorker::NeighboursCount(size_t x, size_t y)
   return Cnt;
 }
 
+void ThreadWorker::LockQueue()
+{
+  
+}
 
+void ThreadWorker::TakeRequests()
+{
+  
+}
 
 /*void TThreadWorker::HandleRequest() 
 { 

@@ -56,19 +56,21 @@ protected:
 class ThreadWorkerData
 {
   pthread_barrier_t* WorkersBarrier;
-  pthread_mutex_t* RequestsLock;
-  pthread_mutex_t WorkersSleepLock;
+  pthread_mutex_t* WorkersSleepLock;
   pthread_cond_t* WorkersSleepCV;
-  pthread_mutex_t
-
+  pthread_mutex_t* MasterSleepLock;
+  pthread_cond_t* MasterSleepCV;
+  vector<vector<int>>* SrcField;
+  vector<vector<int>>* SendField;
+  vector<vector<int>>* ReceiveField;
 };
 
 class ThreadWorker : public BaseWorker, public ThreadWorkerData 
 {
 public:
-  virtual void LockQueue(); 
+  virtual void LockQueue();
+  virtual void UnlockQueue(); 
   virtual MasterSync() override;
-  virtual void Report() override;
   virtual void TakeRequests() override;
   virtual void SendCalculations() override;
   virtual void ReceiveCalculations() override;
@@ -78,7 +80,10 @@ public:
   virtual void SendFinalReport() override;
   virtual void Calculate() override;
   virtual void Sleep() override;
-  TakeRequests();
+  virtual void Report() override;
+  
+  static bool UpdatingQueue;
+  size_t RequestQueuePosition;  
  /* ThreadWorker();
   ThreadWorker(unsigned int id, vector<vector<int>>& field, vector<int>* sendT, vector<int>* sendB, vector<int>* recT,
                vector<int>* recB, BaseRequest* request, pthread_barrier_t* barrier, pthread_mutex_t* reqLock, 
