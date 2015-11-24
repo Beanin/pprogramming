@@ -97,7 +97,7 @@ void ThreadWorker::TakeRequests()
   pthread_mutex_unlock(RequestLock);
 }
 
-void TThreadWorker::SendCalculations()
+void LocalWorker::SendCalculations()
 {
   for (size_t i = 1; i < OldField[0].size() - 1; ++i) 
   {
@@ -106,7 +106,7 @@ void TThreadWorker::SendCalculations()
   }
 }
 
-void TThreadWorker::ReceiveCalculations() 
+void LocalWorker::ReceiveCalculations() 
 {
   for (size_t i = 1; i < OldField[0].size() - 1; ++i) 
   {
@@ -115,12 +115,12 @@ void TThreadWorker::ReceiveCalculations()
   }
 }
 
-void TThreadWorker::CollabSync()
+void ThreadWorker::CollabSync()
 {
   pthread_barrier_wait(Barrier);
 }
 
-void TThreadWorker::WakeUpMaster()
+void ThreadWorker::WakeUpMaster()
 {
   if (Id == 0) 
   { 
@@ -128,7 +128,7 @@ void TThreadWorker::WakeUpMaster()
   }
 }
 
-void ThreadWorker::SendFinalReport() 
+void LocalWorker::SendFinalReport() 
 {
   for (size_t i = 0; i < SrcField->size() - 1; ++i) 
   {
@@ -139,14 +139,14 @@ void ThreadWorker::SendFinalReport()
   }  
 } 
 
-void TThreadWorker::Sleep()
+void ThreadWorker::Sleep()
 {
   pthread_mutex_lock(WorkersSleepLock);
   pthread_cond_wait(WorkersSleepCV, WorkersSleepLock);
   pthread_mutex_unlock(WorkersSleepLock);
 }
 
-size_t ThreadWorker::NeighboursCount(size_t x, size_t y) 
+size_t LocalWorker::NeighboursCount(size_t x, size_t y) 
 {
   size_t Cnt = 0;
   for (int i = -1; i < 2; ++i) 
@@ -160,7 +160,7 @@ size_t ThreadWorker::NeighboursCount(size_t x, size_t y)
   return Cnt;
 } 
 
-void TThreadWorker::Calculate()
+void LocalWorker::Calculate()
 {
   for (size_t y = 1; y < OldField.size() - 1; ++y)
   {

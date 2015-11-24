@@ -52,40 +52,54 @@ protected:
 };
 
 
-
-struct ThreadWorkerData
+struct LocalWorkerDataCommon
 {
-  pthread_barrier_t* WorkersBarrier;
+  const vector<BaseRequest>* RequestsFromMaster;
+};
+
+struct ThreadWorkerDataCommon  
+{
+  pthread_barrier_t* Barrier;
   pthread_mutex_t* WorkersSleepLock;
   pthread_cond_t* WorkersSleepCV;
   pthread_cond_t* MasterSleepCV;
   pthread_mutex_t* RequestLock;
+  
+};
+
+struct LocalWorkerDataInd
+{
   vector<vector<int>>* SrcField;
   vector<vector<int>>* SendFieldTop;
   vector<vector<int>>* SendFieldBottom;
   vector<vector<int>>* ReceiveFieldTop;
   vector<vector<int>>* ReceiveFieldBottom;
-  const vector<BaseRequest>* RequestsFromMaster;
 };
 
-class ThreadWorker : public BaseWorker, public ThreadWorkerData 
+struct LocalWorkerData : public ThreadWorkerDataCommon, public ThreadWorkerDataInd  
+
+class LocalWorker : public BaseWorker, public LocalWorkerData
 {
 public:
-  virtual void MasterSync() override;
-  virtual void TakeRequests() override;
+  virtual void Calculate() override;
+  virtual void SendFinalReport() override;
   virtual void SendCalculations() override;
   virtual void ReceiveCalculations() override;
+protected:
+  size_t NeighboursCount(size_t x, size_t y);
+};
+
+class ThreadWorker : public LocalWorker, public ThreadWorkerDataCommon
+{
+public:
+  virtual void TakeRequests() override;
   virtual void CollabSync() override;
   virtual void WakeUpMaster() override;
-  virtual void SendFinalReport() override;
-  virtual void Calculate() override;
   virtual void Sleep() override;
-
 
   static bool UpdatingQueue;
   static unsigned int Updated; 
   size_t RequestQueuePosition;
   pthread_t pid;
-protected:
-  size_t NeighboursCount(size_t x, size_t y);
+
 };
