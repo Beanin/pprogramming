@@ -60,9 +60,10 @@ void BaseWorker::HandleRequest()
   else if (Requests.front() == "QUIT" && State == STOPPED)
   {
     State = ENDED;
-  } 
+  }  
   else 
-    HandleOtherRequests();
+    Requests.pop_front();
+
 }
 
 size_t ThreadWorker::NeighboursCount(size_t x, size_t y) 

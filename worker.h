@@ -12,18 +12,9 @@ using std::deque;
 
 class BaseWorker {
 public:
-    /*for (size_t i = 1; i < OldField.size() - 1; ++i) {
-      for (size_t j = 1; j < OldField[0].size() - 1; ++j) 
-        OldField[i][j] = Field[i-1][j-1];
-
-    }
-    for (size_t i = 1; i < OldField[0].size() - 1; ++i) {
-      OldField[0][i] = (*recT)[i];
-      OldField[OldField.size() - 1][i] = (*recB)[i];
-    }*/
-   
   void* Handle();
-  void HandleRequest();  
+protected:
+  virtual void HandleRequest();  
   void MasterSync();
 
   virtual void Report() = 0;
@@ -37,10 +28,9 @@ public:
   virtual void Sleep() = 0;
 
   virtual void Report() {}
-  virtual void HandleOtherRequests() {}
   
   virtual ~BaseWorker() = default;
-protected:
+
   vector<vector<int>>> Field;
   vector<vector<int>>> OldField;
   size_t IterNumber;  
@@ -77,21 +67,20 @@ struct LocalWorkerDataInd
 };
 
 struct LocalWorkerData : public ThreadWorkerDataCommon, public ThreadWorkerDataInd  
-
+{}
 class LocalWorker : public BaseWorker, public LocalWorkerData
 {
-public:
+protected:
   virtual void Calculate() override;
   virtual void SendFinalReport() override;
   virtual void SendCalculations() override;
   virtual void ReceiveCalculations() override;
-protected:
   size_t NeighboursCount(size_t x, size_t y);
 };
 
 class ThreadWorker : public LocalWorker, public ThreadWorkerDataCommon
 {
-public:
+protected:
   virtual void TakeRequests() override;
   virtual void CollabSync() override;
   virtual void WakeUpMaster() override;
@@ -101,5 +90,6 @@ public:
   static unsigned int Updated; 
   size_t RequestQueuePosition;
   pthread_t pid;
+  friend class ThreadMaster;
 
 };
