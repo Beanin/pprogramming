@@ -13,10 +13,12 @@ void* BaseWorker::Handle()
 {
   while (State != ENDED) 
   {
+    LockSleep();
     if (State != RUNNING && Requests.empty()) 
     {
       Sleep();
     }
+    UnlockSleep();
     TakeRequest();
     HandleRequest();
     Report();
@@ -64,6 +66,16 @@ void BaseWorker::HandleRequest()
   else 
     Requests.pop_front();
 
+}
+
+void ThreadWorker::LockSleep() 
+{
+  pthread_mutex_lock(SleepLock);
+}
+
+void LocalWorker::Unlock()
+{
+  pthread_mutex_unlock(SleepLock);
 }
 
 size_t ThreadWorker::NeighboursCount(size_t x, size_t y) 
@@ -142,9 +154,7 @@ void LocalWorker::SendFinalReport()
 
 void ThreadWorker::Sleep()
 {
-  pthread_mutex_lock(WorkersSleepLock);
   pthread_cond_wait(WorkersSleepCV, WorkersSleepLock);
-  pthread_mutex_unlock(WorkersSleepLock);
 }
 
 size_t LocalWorker::NeighboursCount(size_t x, size_t y) 

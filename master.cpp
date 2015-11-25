@@ -83,7 +83,7 @@ void BaseMaster::GenerateRandomField()
       OldField[i][j] = rand()%100 < ALIVE_CELL_PROBABILITY ? 1 : 0;
 } 
 
-void LocalMaster::GetStartRequest() override 
+void LocalMaster::GetStartRequest() 
 {
   std::string str;
   cin >> str;

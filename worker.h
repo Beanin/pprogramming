@@ -26,7 +26,10 @@ protected:
   virtual void SendFinalReport() = 0;
   virtual void Calculate() = 0;
   virtual void Sleep() = 0;
-
+  virtual void LockSleep() = 0;
+  virtual void UnlockSleep() = 0;
+  virtual void LockRequest() = 0;
+  virtual void UnlockRequest() = 0;
   virtual void Report() {}
   
   virtual ~BaseWorker() = default;
@@ -50,11 +53,9 @@ struct LocalWorkerDataCommon
 struct ThreadWorkerDataCommon  
 {
   pthread_barrier_t* Barrier;
-  pthread_mutex_t* WorkersSleepLock;
+  pthread_mutex_t* SleepLock;
   pthread_cond_t* WorkersSleepCV;
-  pthread_cond_t* MasterSleepCV;
-  pthread_mutex_t* RequestLock;
-  
+  pthread_cond_t* MasterSleepCV;  
 };
 
 struct LocalWorkerDataInd
@@ -68,6 +69,7 @@ struct LocalWorkerDataInd
 
 struct LocalWorkerData : public ThreadWorkerDataCommon, public ThreadWorkerDataInd  
 {}
+
 class LocalWorker : public BaseWorker, public LocalWorkerData
 {
 protected:
@@ -75,6 +77,11 @@ protected:
   virtual void SendFinalReport() override;
   virtual void SendCalculations() override;
   virtual void ReceiveCalculations() override;
+  virtual void LockSleep() = 0;
+  virtual void UnlockSleep() = 0;
+
+  virtual void Lock(T arg) override;
+  virtual void Unlock(T arg) override;
   size_t NeighboursCount(size_t x, size_t y);
 };
 
