@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <memory>
 #include <iostream>
+#include <fcntl.h>
 
 #include "worker.h"
 
@@ -16,6 +17,10 @@ using std::exception;
 using std::vector;
 using std::shared_ptr;
 using std::cin;
+
+char Stream[100000];
+const char* Cur = Stream;
+char* StreamEnd = Stream;
 
 void* UseThread(void* arg)
 {
@@ -83,18 +88,50 @@ void BaseMaster::GenerateRandomField()
       OldField[i][j] = rand()%100 < ALIVE_CELL_PROBABILITY ? 1 : 0;
 } 
 
-void LocalMaster::GetStartRequest() 
+void LocalMaster::TakeRequests() 
 {
-  std::string str;
-  cin >> str;
-  BaseRequest req(Requests); 
+  StreamEnd+=read(STDIN_FILENO, Stream, 20);
+  if (!strncmp(Cur, "HELP", 4) 
+    PrintHelpMessage();
+  else if (!strncmp(Cur, "RUN", 3)) {
+    Cur+=3;
+    int ic; 
+    sscanf(Cur, "%d", ic);
+    ++Cur;
+    Requests.push_back(BaseRequest("RUN",ic));
+  }  
+  else if (!strncmp(Cur, "STATUS", 6))
+  {
+    Requests.push_back(BaseRequest("STATUS"));
+  }
+  else if (!strncmp(Cur, "QUIT", 4))
+  {
+    Requests.push_back(BaseRequest("QUIT"));
+  }
+  else if (!strncmp(Cur, "STOP", 4))
+  {
+    Requests.push_back(BaseRequest("STOP"));
+  }
+  else if (StreamEnd - Cur > 6) {
+    Cur++;
+  } 
 }
 
-/*
-            std::cout << "Available requests list:\n";
-            std::cout << "START   : Initiates the game\n";
-            std::cout << "RUN X   : Runs X iterations of stopped game\n";
-            std::cout << "STATUS  : Shows field status\n";
-            std::cout << "STOP    : Stops game calculating\n";
-            std::cout << "QUIT    : Closes the program\n";
-            */
+void LocalMaster::GetStartRequest() 
+{
+  StreamEnd+=read(STDIN_FILENO, Stream, 20);
+  if (!strncmp(Cur, "START", 5))
+  {
+    State = STARTED;
+    Cur+=5;
+  }
+  if (!strncmp(Cur, "HELP", 4)) 
+  {
+    PrintHelpMessage();
+    Cur+=4; 
+  }
+  else if (StreamEnd - Cur > 5) {
+    Cur++;
+  } 
+}
+

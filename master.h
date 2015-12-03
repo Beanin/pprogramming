@@ -44,3 +44,7 @@ protected:
   vector<vector<vector<int>>> FieldsToSend;
   vector<BaseRequest> RequestsToSend;
 };
+
+class ThreadMaster: public LocalMaster 
+{
+};

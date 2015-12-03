@@ -1,6 +1,14 @@
 #include <ctime>
 #include <string>
 
+inline void PrintHelpMessage() { 
+  std::cout << "Available requests list:\n";
+  std::cout << "START   : Initiates the game\n";
+  std::cout << "RUN X   : Runs X iterations of stopped game\n";
+  std::cout << "STATUS  : Shows field status\n";
+  std::cout << "STOP    : Stops game calculating\n";
+  std::cout << "QUIT    : Closes the program\n";
+}
 /*
   STOP
   START

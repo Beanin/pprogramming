@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 #include <pthread.h>
 #include <memory>
@@ -28,10 +29,8 @@ protected:
   virtual void Sleep() = 0;
   virtual void LockSleep() = 0;
   virtual void UnlockSleep() = 0;
-  virtual void LockRequest() = 0;
-  virtual void UnlockRequest() = 0;
+
   virtual void Report() {}
-  
   virtual ~BaseWorker() = default;
 
   vector<vector<int>>> Field;
@@ -77,11 +76,9 @@ protected:
   virtual void SendFinalReport() override;
   virtual void SendCalculations() override;
   virtual void ReceiveCalculations() override;
-  virtual void LockSleep() = 0;
-  virtual void UnlockSleep() = 0;
+  virtual void LockRequest() = 0;
+  virtual void UnlockRequest() = 0;
 
-  virtual void Lock(T arg) override;
-  virtual void Unlock(T arg) override;
   size_t NeighboursCount(size_t x, size_t y);
 };
 
