@@ -14,7 +14,6 @@ using std::deque;
 class BaseWorker {
 public:
   void* Handle();
-protected:
   virtual void HandleRequest();  
   void MasterSync();
 
@@ -43,12 +42,6 @@ protected:
   deque<BaseRequest> Requests;
 };
 
-
-struct LocalWorkerDataCommon
-{
-  const vector<BaseRequest>* RequestsFromMaster;
-};
-
 struct ThreadWorkerDataCommon  
 {
   pthread_barrier_t* Barrier;
@@ -57,8 +50,9 @@ struct ThreadWorkerDataCommon
   pthread_cond_t* MasterSleepCV;  
 };
 
-struct LocalWorkerDataInd
+struct LocalWorkerData
 {
+  const vector<BaseRequest>* RequestsFromMaster;
   vector<vector<int>>* SrcField;
   vector<vector<int>>* SendFieldTop;
   vector<vector<int>>* SendFieldBottom;
@@ -71,7 +65,8 @@ struct LocalWorkerData : public ThreadWorkerDataCommon, public ThreadWorkerDataI
 
 class LocalWorker : public BaseWorker, public LocalWorkerData
 {
-protected:
+public:
+  LocalWorker(unsigned number, LocalWorkerData localData);
   virtual void Calculate() override;
   virtual void SendFinalReport() override;
   virtual void SendCalculations() override;
@@ -84,7 +79,10 @@ protected:
 
 class ThreadWorker : public LocalWorker, public ThreadWorkerDataCommon
 {
-protected:
+public:
+  ThreadWorker(unsigned number, LocalWorkerData localData, ThreadWorkerDataCommon threadCommon);
+  virtual ~ThreadWorker() {
+  }
   virtual void TakeRequests() override;
   virtual void CollabSync() override;
   virtual void WakeUpMaster() override;
@@ -95,5 +93,5 @@ protected:
   size_t RequestQueuePosition;
   pthread_t pid;
   friend class ThreadMaster;
-
 };
+

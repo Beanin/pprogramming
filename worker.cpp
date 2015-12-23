@@ -9,6 +9,12 @@
 #include "worker.h"
 
 
+static void* UseThread(void* arg)
+{
+  return (ThreadWorker*)arg->Handle(); 
+}
+
+
 
 void* BaseWorker::Handle() 
 {
@@ -187,3 +193,17 @@ void LocalWorker::Calculate()
   }
   Field.swap(OldField);
 }
+
+LocalWorker::LocalWorker(unsigned number, LocalWorkerData localData):Id(number), LocalWorkerData(localData)
+{
+  Field = *SrcField;
+  OldField = Field;
+  Height = Field.size() - 2;
+  Width = Field[0].size();
+}
+
+ThreadWorker::ThreadWorker(unsigned number, LocalWorkerData localData, ThreadWorkerDataCommon threadCommon):LocalWorker(number, localData),
+  ThreadWorkerDataCommon(threadCommon)
+{
+  pthread_create(&pid, nullptr, UseThread, this);
+}  

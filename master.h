@@ -1,9 +1,10 @@
 #include "request.h"
 #include "worker.h"
+#include <memory>
 
 class BaseMaster: public BaseWorker
 {
-protected:
+public:
   virtual void WakeUpSlaves() = 0; 
   virtual void InitWorker(unsigned number) = 0;
   virtual void SendRequest(BaseRequest req) = 0;
@@ -17,25 +18,22 @@ protected:
   virtual void CollabSync() override {};
   virtual void Calculate() override {};
   virtual void HandleOtherRequests() {Requests.pop_front()};
-
+  virtual void InitWorkers() {};
   virtual void HandleRequest() override;
-  virtual void GetStartRequest();
 
   unsigned WorkersCount;
 };
 
 class LocalMaster: public BaseMaster
 {
-protected:
+public:
   virtual void WakeUpSlaves() override; 
   virtual void SendFinalReport() override;
   virtual void TakeRequests() override; 
   virtual void Report() override;
-  virtual void InitWorkers() override;
   virtual void HandleOtherRequests() override;
-  virtual void GetStartRequest() override; 
 
-  vector<LocalWorker> Slaves;
+  vector<std::shared_ptr<LocalWorker>> Slaves;
   pthread_barrier_t WorkersBarrier;
   pthread_mutex_t WorkersSleepLock;
   pthread_cond_t WorkersSleepCV;
@@ -47,4 +45,9 @@ protected:
 
 class ThreadMaster: public LocalMaster 
 {
+public:
+  ThreadMaster();
+  ~ThreadMaster();
+  virtual void InitWorkers() override;
+  virtual void InitWorker(unsigned i) override;
 };
