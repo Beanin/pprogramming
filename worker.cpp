@@ -1,5 +1,4 @@
-#pragma once
-#include <iostream>
+#include <cstdio>
 #include <ctime>
 #include <string>
 #include <exception>
@@ -11,37 +10,22 @@
 
 static void* UseThread(void* arg)
 {
-  return (ThreadWorker*)arg->Handle(); 
+  return ((ThreadWorker*)arg)->Handle(); 
 }
-
-
 
 void* BaseWorker::Handle() 
 {
   while (State != ENDED) 
   {
-    LockSleep();
-    if (State != RUNNING && Requests.empty()) 
-    {
-      Sleep();
-    }
-    UnlockSleep();
-    TakeRequest();
+    TakeRequests();
     HandleRequest();
     Report();
-    CollabSync();
   }    
-}
-
-void BaseWorker::MasterSync()
-{
-  CollabSync();
-  WakeUpMaster();
 }
 
 void BaseWorker::HandleRequest()
 {
-  if (Requests.front() == "RUN" && State == STOPPED)
+  if (!Requests.empty() && Requests.front() == "RUN" && State == STOPPED)
   {
     IterNumber = 0;
     IterCount = Requests.front().GetIterCount();
@@ -60,32 +44,28 @@ void BaseWorker::HandleRequest()
       Requests.push_front(BaseRequest("STOP"));
     }
   }
-  if (Requests.front() == "STOP" && State == RUNNING))
+
+  if (Requests.empty())
+    return;
+
+  if (Requests.front() == "STOP" && State == RUNNING)
   {
     SendFinalReport();
     State = STOPPED;
     Requests.pop_front();
+    ClearRequests();
   }
   else if (Requests.front() == "QUIT" && State == STOPPED)
   {
     State = ENDED;
   }  
-  else 
+  else {
+    fprintf(stderr, "Request handling error! Request: %s\n", Requests.front().GetType().c_str());
     Requests.pop_front();
-
+  }
 }
 
-void ThreadWorker::LockSleep() 
-{
-  pthread_mutex_lock(SleepLock);
-}
-
-void LocalWorker::Unlock()
-{
-  pthread_mutex_unlock(SleepLock);
-}
-
-size_t ThreadWorker::NeighboursCount(size_t x, size_t y) 
+size_t LocalWorker::NeighboursCount(size_t x, size_t y) 
 {
   size_t Cnt = 0;
   for (int i = -1; i < 2; ++i) 
@@ -97,24 +77,6 @@ size_t ThreadWorker::NeighboursCount(size_t x, size_t y)
     }
   }
   return Cnt;
-}
-
-void ThreadWorker::TakeRequests()
-{
-  pthread_mutex_lock(RequestLock);
-  if (!UpdatingQueue)
-    UpdatingQueue = true;
-  for (; RequestQueuePosition < RequestsFromMaster.size(); ++RequestQueuePosition)
-  {
-    Requests.push_back((*RequestsFromMaster)[RequestQueuePosition]);
-  } 
-  Updated++;
-  if (Updated == WorkersCount)
-  {
-    UpdatingQueue = false;
-    Updated = 0;
-  }
-  pthread_mutex_unlock(RequestLock);
 }
 
 void LocalWorker::SendCalculations()
@@ -135,48 +97,18 @@ void LocalWorker::ReceiveCalculations()
   }
 }
 
-void ThreadWorker::CollabSync()
-{
-  pthread_barrier_wait(Barrier);
-}
 
-void ThreadWorker::WakeUpMaster()
+void LocalWorker::TakeRequests()
 {
-  if (Id == 0) 
-  { 
-    pthread_cond_signal(MasterSleepCV);
-  }
-}
-
-void LocalWorker::SendFinalReport() 
-{
-  for (size_t i = 0; i < SrcField->size() - 1; ++i) 
+  SyncWithMaster();
+  SyncWithMaster();
+  for (; RequestQueuePosition < RequestsFromMaster->size(); ++RequestQueuePosition)
   {
-    for (size_t j = 0; j < (*SrcField)[0].size();++j) 
-    {
-      (*SrcField)[i][j] = OldField[i + 1][j + 1];
-    }
-  }  
-} 
-
-void ThreadWorker::Sleep()
-{
-  pthread_cond_wait(WorkersSleepCV, WorkersSleepLock);
+    Requests.push_back((*RequestsFromMaster)[RequestQueuePosition]);
+  } 
+  
 }
 
-size_t LocalWorker::NeighboursCount(size_t x, size_t y) 
-{
-  size_t Cnt = 0;
-  for (int i = -1; i < 2; ++i) 
-  {
-    for (int j = -1; j < 2; ++j) 
-    {
-      if (!(i==0 && j==0))
-        Cnt+= OldField[i + y][j + x];
-    }
-  }
-  return Cnt;
-} 
 
 void LocalWorker::Calculate()
 {
@@ -194,12 +126,36 @@ void LocalWorker::Calculate()
   Field.swap(OldField);
 }
 
-LocalWorker::LocalWorker(unsigned number, LocalWorkerData localData):Id(number), LocalWorkerData(localData)
+LocalWorker::LocalWorker(unsigned number, LocalWorkerData localData):LocalWorkerData(localData)
 {
+  BaseWorker::Id = number;
   Field = *SrcField;
   OldField = Field;
   Height = Field.size() - 2;
   Width = Field[0].size();
+  State = WAITING;
+}
+
+void LocalWorker::SendFinalReport() 
+{
+  for (size_t i = 0; i < SrcField->size() - 1; ++i) 
+  {
+    for (size_t j = 0; j < (*SrcField)[0].size();++j) 
+    {
+      (*SrcField)[i][j] = OldField[i + 1][j + 1];
+    }
+  } 
+  SyncWithMaster(); 
+} 
+
+void ThreadWorker::CollabSync()
+{
+  pthread_barrier_wait(WorkersBarrier);
+}
+
+void ThreadWorker::SyncWithMaster()
+{
+  pthread_barrier_wait(MasterBarrier);
 }
 
 ThreadWorker::ThreadWorker(unsigned number, LocalWorkerData localData, ThreadWorkerDataCommon threadCommon):LocalWorker(number, localData),

@@ -3,7 +3,8 @@
 #include <pthread.h>
 #include <memory>
 #include <deque>
-#include <iostream>
+
+#include "request.h"
 
 typedef enum {WAITING, RUNNING, STOPPED, ENDED} TState;
 
@@ -13,66 +14,57 @@ using std::deque;
 
 class BaseWorker {
 public:
-  void* Handle();
+  virtual void* Handle();
+  void ClearRequests() {Requests.clear();}
   virtual void HandleRequest();  
-  void MasterSync();
-
-  virtual void Report() = 0;
   virtual void TakeRequests() = 0;
   virtual void SendCalculations() = 0;
   virtual void ReceiveCalculations() = 0;
-  virtual void CollabSync() = 0;
-  virtual void WakeUpMaster() = 0;
   virtual void SendFinalReport() = 0;
   virtual void Calculate() = 0;
-  virtual void Sleep() = 0;
-  virtual void LockSleep() = 0;
-  virtual void UnlockSleep() = 0;
-
-  virtual void Report() {}
+  virtual void CollabSync() = 0; 
+  virtual void SyncWithMaster() = 0;
+ 
+  virtual void Report() {SyncWithMaster();}
   virtual ~BaseWorker() = default;
 
-  vector<vector<int>>> Field;
-  vector<vector<int>>> OldField;
+  vector<vector<int>> Field;
+  vector<vector<int>> OldField;
   size_t IterNumber;  
   size_t IterCount;
-  size_t Height, Width;
-  unsigned int Id;
+  unsigned Height, Width;
+  unsigned Id;
   TState State;
   deque<BaseRequest> Requests;
 };
 
 struct ThreadWorkerDataCommon  
 {
-  pthread_barrier_t* Barrier;
-  pthread_mutex_t* SleepLock;
-  pthread_cond_t* WorkersSleepCV;
-  pthread_cond_t* MasterSleepCV;  
+  pthread_barrier_t* WorkersBarrier;
+  pthread_barrier_t* MasterBarrier;
 };
 
 struct LocalWorkerData
 {
   const vector<BaseRequest>* RequestsFromMaster;
   vector<vector<int>>* SrcField;
-  vector<vector<int>>* SendFieldTop;
-  vector<vector<int>>* SendFieldBottom;
-  vector<vector<int>>* ReceiveFieldTop;
-  vector<vector<int>>* ReceiveFieldBottom;
+  vector<int>* SendFieldTop;
+  vector<int>* SendFieldBottom;
+  vector<int>* ReceiveFieldTop;
+  vector<int>* ReceiveFieldBottom;
+  unsigned RequestQueuePosition;
 };
-
-struct LocalWorkerData : public ThreadWorkerDataCommon, public ThreadWorkerDataInd  
-{}
 
 class LocalWorker : public BaseWorker, public LocalWorkerData
 {
 public:
   LocalWorker(unsigned number, LocalWorkerData localData);
   virtual void Calculate() override;
-  virtual void SendFinalReport() override;
   virtual void SendCalculations() override;
   virtual void ReceiveCalculations() override;
-  virtual void LockRequest() = 0;
-  virtual void UnlockRequest() = 0;
+  virtual void TakeRequests() override;
+  virtual void SendFinalReport() override;
+
 
   size_t NeighboursCount(size_t x, size_t y);
 };
@@ -83,15 +75,14 @@ public:
   ThreadWorker(unsigned number, LocalWorkerData localData, ThreadWorkerDataCommon threadCommon);
   virtual ~ThreadWorker() {
   }
-  virtual void TakeRequests() override;
+
   virtual void CollabSync() override;
-  virtual void WakeUpMaster() override;
-  virtual void Sleep() override;
+  virtual void SyncWithMaster() override;
+
 
   static bool UpdatingQueue;
   static unsigned int Updated; 
   size_t RequestQueuePosition;
   pthread_t pid;
-  friend class ThreadMaster;
 };
 

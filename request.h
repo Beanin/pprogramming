@@ -1,9 +1,11 @@
+#pragma once
 #include <ctime>
 #include <string>
+#include <iostream>
 
 inline void PrintHelpMessage() { 
   std::cout << "Available requests list:\n";
-  std::cout << "START   : Initiates the game\n";
+  std::cout << "START X Y Z : Initiates the game\n on YxZ field using X workers\n";
   std::cout << "RUN X   : Runs X iterations of stopped game\n";
   std::cout << "STATUS  : Shows field status\n";
   std::cout << "STOP    : Stops game calculating\n";
@@ -34,7 +36,9 @@ public:
     return (Type == "RUN") ? IterCount : 0;
   }
   bool operator==(std::string s)
-    return (type.compare(s) == 0);
+  {
+    return s == Type;
+  }
   virtual ~BaseRequest() = default; 
 private: 
   time_t CreationTime;
@@ -42,7 +46,6 @@ private:
   size_t IterCount;
 };
 
-BaseRequest::~BaseRequest() {}
 
 
 

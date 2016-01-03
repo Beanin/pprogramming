@@ -1,15 +1,11 @@
-#include <pthread.h>
-#include <iostream>
-#include <vector>
-#include <ctime>
-#include <string>
 #include <exception>
 #include <stdexcept>
-#include <memory>
-#include <iostream>
 #include <fcntl.h>
+#include <unistd.h>
+#include <cstring>
+#include <sys/select.h>
 
-#include "worker.h"
+#include "master.h"
 
 const unsigned ALIVE_CELL_PROBABILITY = 30; 
 
@@ -22,44 +18,57 @@ char Stream[100000];
 char* Cur = Stream;
 char* StreamEnd = Stream;
 
+int NonblockRead() {
+
+
+}
 
 void BaseMaster::HandleRequest()
 {
+  if (Requests.empty())
+  {
+    WorkersSync();
+    return;
+  }
   if (Requests.front() == "RUN" && State == STOPPED)
   {
     IterNumber = 0;
     IterCount = Requests.front().GetIterCount();
     State = RUNNING;
     SendRequest(Requests.front());
-    WakeUpSlaves();
     Requests.pop_front();
   }
   if (Requests.empty() && State == RUNNING)
   {
-    UpdateRequest();
+    Calculate();
     CollabSync();
     SendCalculations();
     ReceiveCalculations();
     IterNumber++;
     if (IterNumber == IterCount)
     {
-      Requests.push_front(BaseRequest("STOP"));
+      WorkersSync();
+      SendFinalReport();
+      State = STOPPED;
+      ClearRequests();
     }
   }
-  if (Requests.front() == "STOP" && State == RUNNING))
+  if (Requests.front() == "STOP" && State == RUNNING)
   { 
     SendRequest(Requests.front());
-    Sleep();
+    WorkersSync();
     SendFinalReport();
     State = STOPPED;
+    ClearRequests();
   }
   else if (Requests.front() == "QUIT" && State == STOPPED)
   {
+    SendRequest(Requests.front());
     State = ENDED;
   } 
   else if (State == WAITING && Requests.front() == "START")
   {
-    GenerateRandomField(); 
+    GetField(); 
     InitWorkers();
   } 
   else 
@@ -67,7 +76,11 @@ void BaseMaster::HandleRequest()
   
 }
 
-void BaseMaster::GenerateRandomField()
+void LocalMaster::GetField(){
+  GetRandomField();
+}
+
+void LocalMaster::GetRandomField()
 {
   srand(time(0));
   OldField.resize(Height, vector<int>(Width + 2));
@@ -79,62 +92,78 @@ void BaseMaster::GenerateRandomField()
   Field[Field.size() - 1] = Field[1];
 } 
 
+void LocalMaster::SendRequest(BaseRequest req)
+{
+  WorkersSync();
+  RequestsToSend.push_back(req);  
+  WorkersSync();
+}
+
+void LocalMaster::SendFinalReport()
+{
+  std::cout << "DONE!!!111AZAZA\n";
+}
+
 void LocalMaster::TakeRequests() 
 {
-
-  StreamEnd+=read(STDIN_FILENO, Stream, 20);
-  if (!strncmp(Cur, "HELP", 4) 
-    PrintHelpMessage();
-  else if (!strncmp(Cur, "RUN", 3)) {
-    Cur+=3;
-    int ic; 
-    Cur+=sscanf(Cur, "%d", &ic);
-    Requests.push_back(BaseRequest("RUN",ic));
-  }  
-  else if (!strncmp(Cur, "STATUS", 6))
+  while (State == WAITING && Requests.empty()) 
   {
-    Cur += 6;
-    Requests.push_back(BaseRequest("STATUS"));
-  }
-  else if (!strncmp(Cur, "QUIT", 4))
-  {
-    Cur += 4;
-    Requests.push_back(BaseRequest("QUIT"));
-  }
-  else if (!strncmp(Cur, "STOP", 4))
-  {
-    Cur += 4;
-    Requests.push_back(BaseRequest("STOP"));
-  }
-  else if (!strncmp(Cur, "START", 5))
-  { 
-    Cur+=5;
-    if (!Height || !Width) { 
-      Cur+=sscanf(Cur, "%u%u%u", &WorkersCount &Height, &Width);
-      Slaves.resize(WorkersCount);
-      FieldsToSend.resize(WorkersCount, vector<vector<int>> (Height + 2));
-      Requests.push_back(BaseRequest("START"));
+    StreamEnd+=read(STDIN_FILENO, StreamEnd, 20);
+    if (!strncmp(Cur, "HELP", 4)) 
+    {
+      PrintHelpMessage();
+      Cur+=4;
     }
+    else if (!strncmp(Cur, "RUN", 3)) {
+      Cur+=3;
+      int ic; 
+      Cur+=sscanf(Cur, "%d", &ic);
+      Requests.push_back(BaseRequest("RUN",ic));
+    }  
+    else if (!strncmp(Cur, "STATUS", 6))
+    {
+      Cur += 6;
+      Requests.push_back(BaseRequest("STATUS"));
+    }
+    else if (!strncmp(Cur, "QUIT", 4))
+    {
+      Cur += 4;
+      Requests.push_back(BaseRequest("QUIT"));
+    }
+    else if (!strncmp(Cur, "STOP", 4))
+    {
+      Cur += 4;
+      Requests.push_back(BaseRequest("STOP"));
+    }
+    else if (!strncmp(Cur, "START", 5))
+    { 
+      Cur+=5;
+      if (!Height || !Width) { 
+        Cur+=sscanf(Cur, "%u%u%u", &WorkersCount, &Height, &Width);
+        Slaves.resize(WorkersCount);
+        FieldsToSend.resize(WorkersCount, vector<vector<int>> (Height + 2));
+        Requests.push_back(BaseRequest("START"));
+      }
+    }
+    else if (StreamEnd - Cur > 6) {
+      fprintf(stderr, "!!!!%s\n!!!" ,Cur);
+      Cur++;
+    } 
   }
-  else if (StreamEnd - Cur > 6) {
-    Cur++;
-  } 
 }
 
 void ThreadMaster::InitWorkers() {
   ThreadWorkerDataCommon threadCommon;
-  threadCommon.Barrier = &WorkersBarrier;
-  threadCommon.SleepLock = &WorkersSleepLock;
-  threadCommon.WorkersSleepCV = &WorkersSleepCV;
-  threadCommon.MasterSleepCV = &MasterSleepCV;
+  threadCommon.WorkersBarrier = &WorkersBarrier;
+  threadCommon.MasterBarrier = &MasterBarrier;
   for (size_t i = 0; i < WorkersCount; ++i)
   {
     size_t sz = ((Height - 1 / WorkersCount) + 1);
     size_t y0 = sz * i;
-    FieldsToSend[i].resize(min(sz, Height + 2 - y0), vector<int>(Width));
-    for (size_t y = 0; y < min(sz + 2, Height + 2 - y0); ++y)
+    FieldsToSend[i].resize(std::min(sz, Height + 2 - y0), vector<int>(Width));
+    for (size_t y = 0; y < std::min(sz + 2, Height + 2 - y0); ++y)
     {
-      FieldsToSend[i][y] = Field[i][y0 + y]; 
+      FieldsToSend[i][y] = Field[y0 + y]; 
     }
     LocalWorkerData localData;
     localData.SrcField = &FieldsToSend[i];
@@ -144,25 +173,26 @@ void ThreadMaster::InitWorkers() {
     localData.ReceiveFieldTop = &FieldsToSend[i][0];
     localData.RequestsFromMaster = &RequestsToSend;
     Slaves.push_back(std::shared_ptr<LocalWorker>(new ThreadWorker(i, localData, threadCommon)));
-
   }
+  fprintf(stderr, "3!\n");
 }
 
-ThreadMaster::ThreadMaster(unsigned i)
+void ThreadMaster::WorkersSync()
 {
+  pthread_barrier_wait(&MasterBarrier);
+}
+
+ThreadMaster::ThreadMaster()
+{
+  int flag = fcntl(STDIN_FILENO, F_GETFL);
+  fcntl(STDIN_FILENO, F_SETFL, flag | O_NONBLOCK);
+  State = WAITING; 
   pthread_barrier_init(&WorkersBarrier, nullptr, WorkersCount);
-  pthread_mutex_init(&WorkersSleepLock, nullptr);
-  pthread_cond_init(&WorkersSleepCV, nullptr);
-  pthread_cond_init(&MasterSleepCV, nullptr);
-  pthread_mutex_init(&RequestLock)
+  pthread_barrier_init(&MasterBarrier, nullptr, WorkersCount + 1);
 }
 
 ThreadMaster::~ThreadMaster() 
 {
-  set_fl(STDIN_FILENO, O_NONBLOCK); 
   pthread_barrier_destroy(&WorkersBarrier);
-  pthread_mutex_destroy(&WorkersSleepLock);
-  pthread_cond_destroy(&WorkersSleepCV);
-  pthread_cond_destory(&MasterSleepCV);
-  pthread_mutex_destroy(&RequestLock);
+  pthread_barrier_destroy(&MasterBarrier);
 }

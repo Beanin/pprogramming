@@ -4,6 +4,6 @@
 int main()
 {
   ThreadMaster master;
-  master->Handle();
+  master.Handle();
   PrintHelpMessage();	
 }
