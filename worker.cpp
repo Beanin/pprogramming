@@ -41,7 +41,7 @@ void BaseWorker::HandleRequest()
   if (Requests.empty())
     return;
 
-  if (Requests.front() == "RUN" && (State == STOPPED || State == WAITING))
+  if (Requests.front() == "RUN" && State == STOPPED)
   {
     IterNumber = 0;
     IterCount = Requests.front().GetIterCount();
@@ -76,7 +76,6 @@ size_t LocalWorker::NeighboursCount(size_t x, size_t y)
         Cnt+= OldField[(OldField.size() + y + i) % OldField.size()][(OldField[0].size()+ j+ x) % OldField[0].size()];
     }
   }
-  //printf("%d %d %d\n",x,y,Cnt);
   return Cnt;
 }
 
@@ -101,7 +100,7 @@ void LocalWorker::TakeRequests()
   for (; RequestQueuePosition < RequestsFromMaster->size(); ++RequestQueuePosition)
   {
     Requests.push_back((*RequestsFromMaster)[RequestQueuePosition]);
-  } 
+  }
 }
 
 
@@ -129,7 +128,7 @@ LocalWorker::LocalWorker(unsigned number, LocalWorkerData localData):LocalWorker
   Field = OldField;
   Height = OldField.size() - 2;
   Width = OldField[0].size();
-  State = WAITING;
+  State = STOPPED;
 }
 
 void LocalWorker::SendFinalReport() 

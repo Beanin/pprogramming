@@ -35,15 +35,16 @@ void LocalMaster::TakeRequests()
   while (!Passed || (State != RUNNING && Requests.empty())) 
   {
     int Read = read(STDIN_FILENO, StreamEnd, 100);
-    if (Read > 0) 
+    if (Read > 0) {
       StreamEnd+=Read;
+    }
     if (!strncmp(Cur, "HELP", 4)) 
     {
       PrintHelpMessage();
-      Cur+=5;
+      Cur+=4;
     }
     else if (!strncmp(Cur, "RUN", 3)) {
-      Cur+=4;
+      Cur+=3;
       int ic; 
       sscanf(Cur, "%d", &ic);
       while (*Cur != '\n')
@@ -53,17 +54,17 @@ void LocalMaster::TakeRequests()
     }  
     else if (!strncmp(Cur, "STATUS", 6))
     {
-      Cur += 7;
-      Requests.push_back(BaseRequest("STATUS"));
+      Cur += 6;
+      PrintField(Field);
     }
     else if (!strncmp(Cur, "QUIT", 4))
     {
-      Cur += 5;
+      Cur += 4;
       Requests.push_back(BaseRequest("QUIT"));
     }
     else if (!strncmp(Cur, "STOP", 4))
     {
-      Cur += 5;
+      Cur += 4;
       Requests.push_back(BaseRequest("STOP"));
     }
     else if (!strncmp(Cur, "START", 5))
@@ -81,9 +82,6 @@ void LocalMaster::TakeRequests()
       }
     }
     else if (StreamEnd - Cur > 1) {
-      /*printf("!");
-      putchar(*Cur);
-      printf("!\n");*/
       Cur++;
     } 
     Passed = true;
@@ -113,7 +111,7 @@ void BaseMaster::HandleRequest()
     return;
   }
 
-  if (Requests.front() == "RUN" && (State == STOPPED || State == WAITING))
+  if (Requests.front() == "RUN" && State == STOPPED)
   {
     IterNumber = 0;
     IterCount = Requests.front().GetIterCount();
@@ -140,6 +138,7 @@ void BaseMaster::HandleRequest()
     GetField(); 
     InitWorkers();
     Requests.pop_front();
+    State = STOPPED; 
   } 
   else 
     HandleOtherRequests();
@@ -183,11 +182,10 @@ void LocalMaster::SendFinalReport()
       Field[y0 + y] = FieldsToSend[i][y]; 
     }
   }
-  PrintField(Field);
+  IterNumber = 0;
 }
 
 void ThreadMaster::InitWorkers() {
-  PrintField(Field);
   ThreadWorkerDataCommon threadCommon;
   threadCommon.WorkersBarrier = &WorkersBarrier;
   threadCommon.MasterBarrier = &MasterBarrier;
@@ -222,6 +220,7 @@ void ThreadMaster::WorkersSync()
 
 ThreadMaster::ThreadMaster(int WorkersCount_)
 {
+  IterNumber = 0;
   WorkersCount = WorkersCount_;
   PrintHelpMessage();
   pthread_barrier_init(&WorkersBarrier, nullptr, WorkersCount);

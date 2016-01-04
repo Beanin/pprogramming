@@ -18,7 +18,7 @@ public:
 
   virtual void HandleRequest() override;
 
-  virtual void HandleOtherRequests() {throw std::logic_error("wrong_request");}
+  virtual void HandleOtherRequests() {/*throw std::logic_error("wrong_request");*/}
   virtual void InitWorkers() {}
   virtual void GetField() = 0;
 
