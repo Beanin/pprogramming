@@ -41,10 +41,10 @@ void LocalMaster::TakeRequests()
     if (!strncmp(Cur, "HELP", 4)) 
     {
       PrintHelpMessage();
-      Cur+=4;
+      Cur+=5;
     }
     else if (!strncmp(Cur, "RUN", 3)) {
-      Cur+=3;
+      Cur+=4;
       int ic; 
       sscanf(Cur, "%d", &ic);
       while (*Cur != '\n')
@@ -54,32 +54,30 @@ void LocalMaster::TakeRequests()
     }  
     else if (!strncmp(Cur, "STATUS", 6))
     {
-      Cur += 6;
+      Cur += 7;
       PrintField(Field);
     }
     else if (!strncmp(Cur, "QUIT", 4))
     {
-      Cur += 4;
+      Cur += 5;
       Requests.push_back(BaseRequest("QUIT"));
     }
     else if (!strncmp(Cur, "STOP", 4))
     {
-      Cur += 4;
+      Cur += 5;
       Requests.push_back(BaseRequest("STOP"));
     }
     else if (!strncmp(Cur, "START", 5))
     { 
       Cur+=6;
-      if (!Height || !Width) { 
-        sscanf(Cur, "%u%u", &Height, &Width);
-        if (!Height || !Width)
-          throw std::logic_error("Wrong field size");
-        while (*Cur != '\n')
-          Cur++;
+      sscanf(Cur, "%u%u", &Height, &Width);
+      if (!Height || !Width)
+        throw std::logic_error("Wrong field size");
+      while (*Cur != '\n')
         Cur++;
-        FieldsToSend.resize(WorkersCount);
-        Requests.push_back(BaseRequest("START"));
-      }
+      Cur++;
+      FieldsToSend.resize(WorkersCount);
+      Requests.push_back(BaseRequest("START"));
     }
     else if (StreamEnd - Cur > 1) {
       Cur++;
