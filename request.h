@@ -5,11 +5,11 @@
 
 inline void PrintHelpMessage() { 
   std::cout << "Available requests list:\n";
-  std::cout << "START X Y Z : Initiates the game\n on YxZ field using X workers\n";
-  std::cout << "RUN X   : Runs X iterations of stopped game\n";
-  std::cout << "STATUS  : Shows field status\n";
-  std::cout << "STOP    : Stops game calculating\n";
-  std::cout << "QUIT    : Closes the program\n";
+  std::cout << "START Y Z : Initiates the game on Y x Z  field\n";
+  std::cout << "RUN X     : Runs X iterations of stopped game\n";
+  std::cout << "STATUS    : Shows field status\n";
+  std::cout << "STOP      : Stops game calculating\n";
+  std::cout << "QUIT      : Closes the program\n";
 }
 /*
   STOP

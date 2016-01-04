@@ -7,7 +7,6 @@
 
 #include "worker.h"
 
-
 static void* UseThread(void* arg)
 {
   return ((ThreadWorker*)arg)->Handle(); 
@@ -25,18 +24,12 @@ void* BaseWorker::Handle()
 
 void BaseWorker::HandleRequest()
 {
-  if (!Requests.empty() && Requests.front() == "RUN" && State == STOPPED)
-  {
-    IterNumber = 0;
-    IterCount = Requests.front().GetIterCount();
-    State = RUNNING;
-    Requests.pop_front();
-  }
-  if (Requests.empty() && State == RUNNING)
+  if (State == RUNNING)
   {
     Calculate();
     CollabSync();
     SendCalculations();
+    CollabSync();
     ReceiveCalculations();
     IterNumber++;
     if (IterNumber == IterCount)
@@ -48,7 +41,14 @@ void BaseWorker::HandleRequest()
   if (Requests.empty())
     return;
 
-  if (Requests.front() == "STOP" && State == RUNNING)
+  if (Requests.front() == "RUN" && (State == STOPPED || State == WAITING))
+  {
+    IterNumber = 0;
+    IterCount = Requests.front().GetIterCount();
+    State = RUNNING;
+    Requests.pop_front();
+  }
+  else if (Requests.front() == "STOP" && State == RUNNING)
   {
     SendFinalReport();
     State = STOPPED;
@@ -60,7 +60,7 @@ void BaseWorker::HandleRequest()
     State = ENDED;
   }  
   else {
-    fprintf(stderr, "Request handling error! Request: %s\n", Requests.front().GetType().c_str());
+    fprintf(stderr, "Request handling error! Request: %s\nId:%u\n", Requests.front().GetType().c_str(), Id);
     Requests.pop_front();
   }
 }
@@ -72,8 +72,8 @@ size_t LocalWorker::NeighboursCount(size_t x, size_t y)
   {
     for (int j = -1; j < 2; ++j) 
     {
-      if (!(i==0 && j==0))
-        Cnt+= OldField[(i + OldField.size() + y) % OldField.size()][(j + OldField[0].size() + x) % OldField[0].size()];
+      if (i*i + j*j)
+        Cnt+= OldField[(OldField.size() + y + i) % OldField.size()][(OldField[0].size()+ j+ x) % OldField[0].size()];
     }
   }
   return Cnt;
@@ -81,20 +81,15 @@ size_t LocalWorker::NeighboursCount(size_t x, size_t y)
 
 void LocalWorker::SendCalculations()
 {
-  for (size_t i = 1; i < OldField[0].size() - 1; ++i) 
-  {
-    (*SendFieldTop)[i - 1] = OldField[0][i]; 
-    (*SendFieldBottom)[i - 1] = OldField[OldField.size() - 1][i];  
-  }
+  (*SendFieldTop) = OldField[1];
+  (*SendFieldBottom) = OldField[OldField.size() - 2]; 
 }
 
 void LocalWorker::ReceiveCalculations() 
 {
-  for (size_t i = 1; i < OldField[0].size() - 1; ++i) 
-  {
-    OldField[0][i] = (*ReceiveFieldTop)[i];
-    OldField[OldField.size() - 1][i] = (*ReceiveFieldBottom)[i];
-  }
+
+  OldField[0] = (*ReceiveFieldTop);
+  OldField.back() = (*ReceiveFieldBottom);
 }
 
 
@@ -106,7 +101,6 @@ void LocalWorker::TakeRequests()
   {
     Requests.push_back((*RequestsFromMaster)[RequestQueuePosition]);
   } 
-  
 }
 
 
@@ -114,7 +108,7 @@ void LocalWorker::Calculate()
 {
   for (size_t y = 1; y < OldField.size() - 1; ++y)
   {
-    for (size_t x = 1; x < OldField[0].size() - 1; ++x)
+    for (size_t x = 0; x < OldField[0].size(); ++x)
     {
       if (OldField[y][x] && (NeighboursCount(x, y) == 3 || NeighboursCount(x, y) == 4))
         Field[y][x] = 1;
@@ -124,27 +118,22 @@ void LocalWorker::Calculate()
     }
   }
   Field.swap(OldField);
+  PrintField(OldField);
 }
 
 LocalWorker::LocalWorker(unsigned number, LocalWorkerData localData):LocalWorkerData(localData)
 {
+
   BaseWorker::Id = number;
-  Field = *SrcField;
-  OldField = Field;
-  Height = Field.size() - 2;
-  Width = Field[0].size();
+  OldField = *SrcField;
+  Height = OldField.size() - 2;
+  Width = OldField[0].size();
   State = WAITING;
 }
 
 void LocalWorker::SendFinalReport() 
 {
-  for (size_t i = 0; i < SrcField->size() - 1; ++i) 
-  {
-    for (size_t j = 0; j < (*SrcField)[0].size();++j) 
-    {
-      (*SrcField)[i][j] = OldField[i + 1][j + 1];
-    }
-  } 
+  (*SrcField) = OldField; 
   SyncWithMaster(); 
 } 
 

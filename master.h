@@ -18,7 +18,7 @@ public:
 
   virtual void HandleRequest() override;
 
-  virtual void HandleOtherRequests() {Requests.pop_front();}
+  virtual void HandleOtherRequests() {throw std::logic_error("wrong_request");}
   virtual void InitWorkers() {}
   virtual void GetField() = 0;
 
@@ -39,13 +39,13 @@ public:
   vector<vector<vector<int>>> FieldsToSend;
   vector<BaseRequest> RequestsToSend;
 
-  int Read();  
+
 };
 
 class ThreadMaster: public LocalMaster 
 {
 public:
-  ThreadMaster();
+  ThreadMaster(int);
   ~ThreadMaster();
   virtual void WorkersSync() override; 
   virtual void InitWorkers() override;

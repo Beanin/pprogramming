@@ -1,9 +1,14 @@
 #include "master.h"
 
 
-int main()
+int main(int argc, char** argv)
 {
-  ThreadMaster master;
+  int WorkersCount;	
+  if (argc == 1)
+    WorkersCount = 1;
+  else	
+    WorkersCount = atoi(argv[1]);	
+  ThreadMaster master(WorkersCount);
+  master.Id = -1;
   master.Handle();
-  PrintHelpMessage();	
 }

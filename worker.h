@@ -25,7 +25,7 @@ public:
   virtual void CollabSync() = 0; 
   virtual void SyncWithMaster() = 0;
  
-  virtual void Report() {SyncWithMaster();}
+  virtual void Report() {}
   virtual ~BaseWorker() = default;
 
   vector<vector<int>> Field;
@@ -74,6 +74,7 @@ class ThreadWorker : public LocalWorker, public ThreadWorkerDataCommon
 public:
   ThreadWorker(unsigned number, LocalWorkerData localData, ThreadWorkerDataCommon threadCommon);
   virtual ~ThreadWorker() {
+    pthread_join(pid, nullptr);
   }
 
   virtual void CollabSync() override;
@@ -82,7 +83,6 @@ public:
 
   static bool UpdatingQueue;
   static unsigned int Updated; 
-  size_t RequestQueuePosition;
   pthread_t pid;
 };
 
