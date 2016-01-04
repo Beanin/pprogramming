@@ -7,7 +7,7 @@
 
 #include "master.h"
 
-const unsigned ALIVE_CELL_PROBABILITY = 69; 
+const unsigned ALIVE_CELL_PROBABILITY = 45; 
 
 using std::exception;
 using std::vector;
@@ -27,105 +27,6 @@ void PrintField(const vector<vector<int>> &f) {
     }
     printf("\n");
   }
-}
-
-void BaseMaster::HandleRequest()
-{
-  if (State == RUNNING)
-  {
-    Calculate();
-    CollabSync();
-    SendCalculations();
-    ReceiveCalculations();
-    IterNumber++;
-    if (IterNumber == IterCount)
-    {
-      WorkersSync();
-      SendFinalReport();
-      State = STOPPED;
-      ClearRequests();
-    }
-  }
-
-  if (Requests.empty())
-  {
-    WorkersSync();
-    WorkersSync();
-    return;
-  }
-
-  if (Requests.front() == "RUN" && (State == STOPPED || State == WAITING))
-  {
-    IterNumber = 0;
-    IterCount = Requests.front().GetIterCount();
-    State = RUNNING;
-    SendRequest(Requests.front());
-    Requests.pop_front();
-    return;
-  }
-  
-
-  if (Requests.front() == "STOP" && State == RUNNING)
-  { 
-    SendRequest(Requests.front());
-    WorkersSync();
-    SendFinalReport();
-    State = STOPPED;
-    ClearRequests();
-  }
-  else if (Requests.front() == "QUIT" && State == STOPPED)
-  {
-    SendRequest(Requests.front());
-    State = ENDED;
-  } 
-  else if (State == WAITING && Requests.front() == "START")
-  {
-    GetField(); 
-    InitWorkers();
-    Requests.pop_front();
-  } 
-  else 
-    HandleOtherRequests();
-}
-
-void LocalMaster::GetField(){
-  GetRandomField();
-}
-
-void LocalMaster::GetRandomField()
-{
-  srand(time(0));
-  OldField.resize(Height + 2, vector<int>(Width));
-
-  OldField.resize(Height + 2, vector<int>(Width));
-  for (size_t i = 1; i < OldField.size() - 1; ++i)
-    for (size_t j = 0; j < OldField[0].size(); ++j)
-      OldField[i][j] = rand()%100 < ALIVE_CELL_PROBABILITY ? 1 : 0;
-  OldField[0] = OldField[OldField.size() - 2];
-  OldField[OldField.size() - 1] = OldField[1];
-  Field = OldField;
-} 
-
-void LocalMaster::SendRequest(BaseRequest req)
-{
-  WorkersSync();
-  RequestsToSend.push_back(req);  
-  WorkersSync();
-}
-
-void LocalMaster::SendFinalReport()
-{
-  printf("Done\n");
-  for (size_t i = 0; i < WorkersCount; ++i) 
-  {
-    size_t sz = (Height - 1) / WorkersCount + 1;
-    size_t y0 = sz * i;
-    for (size_t y = 1; y < std::min(sz + 2, Height + 2 - y0) - 1; ++y)
-    {
-      Field[y0 + y] = FieldsToSend[i][y]; 
-    }
-  }
-  PrintField(Field);
 }
 
 void LocalMaster::TakeRequests() 
@@ -175,7 +76,6 @@ void LocalMaster::TakeRequests()
         while (*Cur != '\n')
           Cur++;
         Cur++;
-        Slaves.resize(WorkersCount);
         FieldsToSend.resize(WorkersCount);
         Requests.push_back(BaseRequest("START"));
       }
@@ -188,6 +88,102 @@ void LocalMaster::TakeRequests()
     } 
     Passed = true;
   }
+}
+
+void BaseMaster::HandleRequest()
+{
+  if (State == RUNNING && Requests.empty())
+  {
+    WorkersSync();
+    WorkersSync();
+    Calculate();
+    CollabSync();
+    SendCalculations();
+    ReceiveCalculations();
+    IterNumber++;
+    if (IterNumber == IterCount)
+    {
+      SendFinalReport();
+      State = STOPPED;
+      ClearRequests();
+    }
+  }
+  if (Requests.empty())
+  {
+    return;
+  }
+
+  if (Requests.front() == "RUN" && (State == STOPPED || State == WAITING))
+  {
+    IterNumber = 0;
+    IterCount = Requests.front().GetIterCount();
+    State = RUNNING;
+    SendRequest(Requests.front());
+    Requests.pop_front();
+    return;
+  }
+  
+  if (Requests.front() == "STOP" && State == RUNNING)
+  { 
+    SendRequest(Requests.front());
+    SendFinalReport();
+    State = STOPPED;
+    ClearRequests();
+  }
+  else if (Requests.front() == "QUIT" && State == STOPPED)
+  {
+    SendRequest(Requests.front());
+    State = ENDED;
+  } 
+  else if (State == WAITING && Requests.front() == "START")
+  {
+    GetField(); 
+    InitWorkers();
+    Requests.pop_front();
+  } 
+  else 
+    HandleOtherRequests();
+}
+
+void LocalMaster::GetField(){
+  GetRandomField();
+}
+
+void LocalMaster::GetRandomField()
+{
+  srand(time(0));
+  OldField.resize(Height + 2, vector<int>(Width));
+
+  OldField.resize(Height + 2, vector<int>(Width));
+  for (size_t i = 1; i < OldField.size() - 1; ++i)
+    for (size_t j = 0; j < OldField[0].size(); ++j)
+      OldField[i][j] = rand()%100 < ALIVE_CELL_PROBABILITY ? 1 : 0;
+  OldField[0] = OldField[OldField.size() - 2];
+  OldField[OldField.size() - 1] = OldField[1];
+  Field = OldField;
+} 
+
+void LocalMaster::SendRequest(BaseRequest req)
+{
+  WorkersSync();
+  RequestsToSend.push_back(req);  
+  WorkersSync();
+}
+
+void LocalMaster::SendFinalReport()
+{
+  WorkersSync();
+  printf("Done\n");
+  for (size_t i = 0; i < WorkersCount; ++i) 
+  {
+    size_t sz = (Height - 1) / WorkersCount + 1;
+    size_t y0 = sz * i;
+    for (size_t y = 1; y < std::min(sz + 2, Height + 2 - y0) - 1; ++y)
+    {
+      Field[y0 + y] = FieldsToSend[i][y]; 
+    }
+  }
+  PrintField(Field);
 }
 
 void ThreadMaster::InitWorkers() {
@@ -215,8 +211,7 @@ void ThreadMaster::InitWorkers() {
     localData.ReceiveFieldTop = &FieldsToSend[i][0];
     localData.RequestsFromMaster = &RequestsToSend;
     localData.RequestQueuePosition = 0;
-    std::shared_ptr<ThreadWorker> tmp(new ThreadWorker(i, localData, threadCommon));
-    Slaves[i] = tmp;
+    Slaves.push_back(std::shared_ptr<ThreadWorker>(new ThreadWorker(i, localData, threadCommon)));
   }
 }
 

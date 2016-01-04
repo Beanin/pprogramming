@@ -24,7 +24,7 @@ void* BaseWorker::Handle()
 
 void BaseWorker::HandleRequest()
 {
-  if (State == RUNNING)
+  if (State == RUNNING && Requests.empty())
   {
     Calculate();
     CollabSync();
@@ -72,10 +72,11 @@ size_t LocalWorker::NeighboursCount(size_t x, size_t y)
   {
     for (int j = -1; j < 2; ++j) 
     {
-      if (i*i + j*j)
+      if (i*i + j*j > 0)
         Cnt+= OldField[(OldField.size() + y + i) % OldField.size()][(OldField[0].size()+ j+ x) % OldField[0].size()];
     }
   }
+  //printf("%d %d %d\n",x,y,Cnt);
   return Cnt;
 }
 
@@ -118,7 +119,6 @@ void LocalWorker::Calculate()
     }
   }
   Field.swap(OldField);
-  PrintField(OldField);
 }
 
 LocalWorker::LocalWorker(unsigned number, LocalWorkerData localData):LocalWorkerData(localData)
@@ -126,6 +126,7 @@ LocalWorker::LocalWorker(unsigned number, LocalWorkerData localData):LocalWorker
 
   BaseWorker::Id = number;
   OldField = *SrcField;
+  Field = OldField;
   Height = OldField.size() - 2;
   Width = OldField[0].size();
   State = WAITING;
