@@ -1,0 +1,3 @@
+all: ompmain.cpp worker.cpp master.cpp ompmaster.cpp
+	g++ -std=c++11 -fopenmp ompmain.cpp worker.cpp master.cpp ompmaster.cpp
+

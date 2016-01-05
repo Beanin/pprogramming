@@ -31,6 +31,7 @@ LocalMaster::LocalMaster()
 {
   int flag = fcntl(STDIN_FILENO, F_GETFL);
   fcntl(STDIN_FILENO, F_SETFL, flag | O_NONBLOCK);
+  PrintHelpMessage();
 }
 
 LocalMaster::~LocalMaster()
@@ -41,7 +42,7 @@ LocalMaster::~LocalMaster()
 
 void LocalMaster::TakeRequests() 
 {
-  bool Passed = false;
+  bool Passed = IterNumber % 3 > 0;
   while (!Passed || (State != RUNNING && Requests.empty())) 
   {
     int Read = read(STDIN_FILENO, StreamEnd, 100);

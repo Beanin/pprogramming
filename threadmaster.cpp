@@ -37,7 +37,6 @@ ThreadMaster::ThreadMaster(int WorkersCount_)
 {
   IterNumber = 0;
   WorkersCount = WorkersCount_;
-  PrintHelpMessage();
   pthread_barrier_init(&WorkersBarrier, nullptr, WorkersCount);
   pthread_barrier_init(&MasterBarrier, nullptr, WorkersCount + 1);
   State = WAITING; 

@@ -13,9 +13,10 @@ using std::deque;
 
 class BaseWorker {
 public:
-  virtual void* Handle();
+  void* Handle();
   void ClearRequests() {Requests.clear();}
   virtual void HandleRequest();  
+  virtual void HandleOtherRequests();
   virtual void TakeRequests() = 0;
   virtual void SendCalculations() = 0;
   virtual void ReceiveCalculations() = 0;
@@ -23,7 +24,6 @@ public:
   virtual void Calculate() = 0;
   virtual void CollabSync() = 0; 
   virtual void SyncWithMaster() = 0;
- 
   virtual void Report() {}
   virtual ~BaseWorker() = default;
 
@@ -48,16 +48,16 @@ struct LocalWorkerData
   unsigned RequestQueuePosition;
 };
 
-class LocalWorker : public BaseWorker, public LocalWorkerData
+class LocalWorker : public virtual BaseWorker, public LocalWorkerData
 {
 public:
+  LocalWorker()=default;
   LocalWorker(unsigned number, LocalWorkerData localData);
-  virtual void Calculate() override;
-  virtual void SendCalculations() override;
   virtual void ReceiveCalculations() override;
+  virtual void SendCalculations() override;
   virtual void TakeRequests() override;
   virtual void SendFinalReport() override;
-
+  virtual void Calculate() override;
 
   size_t NeighboursCount(size_t x, size_t y);
 };

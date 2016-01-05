@@ -56,10 +56,16 @@ void BaseWorker::HandleRequest()
     State = ENDED;
   }  
   else {
-    fprintf(stderr, "Request handling error! Request: %s\nId:%u\n", Requests.front().GetType().c_str(), Id);
-    Requests.pop_front();
+    HandleOtherRequests();
   }
 }
+
+void BaseWorker::HandleOtherRequests()
+{
+  fprintf(stderr, "Request handling error! Request: %s\nId:%u\n", Requests.front().GetType().c_str(), Id);
+  Requests.pop_front();
+}
+
 
 size_t LocalWorker::NeighboursCount(size_t x, size_t y) 
 {
@@ -108,7 +114,7 @@ void LocalWorker::Calculate()
     {
       if (OldField[y][x] && (NeighboursCount(x, y) == 3 || NeighboursCount(x, y) == 4))
         Field[y][x] = 1;
-      else if (OldField[y][x]==0 && NeighboursCount(x, y) == 3)
+      else if (OldField[y][x] == 0 && NeighboursCount(x, y) == 3)
         Field[y][x] = 1;
       else Field[y][x] = 0;   
     }

@@ -3,7 +3,7 @@
 #include "worker.h"
 #include <memory>
 
-class BaseMaster: public BaseWorker
+class BaseMaster: public virtual BaseWorker
 {
 public:
   virtual void SendRequest(BaseRequest req) = 0;
@@ -18,14 +18,13 @@ public:
 
   virtual void HandleRequest() override;
 
-  virtual void HandleOtherRequests() {/*throw std::logic_error("wrong_request");*/}
-  virtual void InitWorkers() {}
+  virtual void InitWorkers() = 0;
   virtual void GetField() = 0;
 
   unsigned WorkersCount;
 };
 
-class LocalMaster: public BaseMaster
+class LocalMaster: public virtual BaseMaster
 {
 public:
   LocalMaster();
