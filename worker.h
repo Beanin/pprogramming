@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include <pthread.h>
 #include <memory>
 #include <deque>
 
@@ -38,12 +37,6 @@ public:
   deque<BaseRequest> Requests;
 };
 
-struct ThreadWorkerDataCommon  
-{
-  pthread_barrier_t* WorkersBarrier;
-  pthread_barrier_t* MasterBarrier;
-};
-
 struct LocalWorkerData
 {
   const vector<BaseRequest>* RequestsFromMaster;
@@ -67,22 +60,5 @@ public:
 
 
   size_t NeighboursCount(size_t x, size_t y);
-};
-
-class ThreadWorker : public LocalWorker, public ThreadWorkerDataCommon
-{
-public:
-  ThreadWorker(unsigned number, LocalWorkerData localData, ThreadWorkerDataCommon threadCommon);
-  virtual ~ThreadWorker() {
-    pthread_join(pid, nullptr);
-  }
-
-  virtual void CollabSync() override;
-  virtual void SyncWithMaster() override;
-
-
-  static bool UpdatingQueue;
-  static unsigned int Updated; 
-  pthread_t pid;
 };
 

@@ -28,25 +28,15 @@ public:
 class LocalMaster: public BaseMaster
 {
 public:
+  LocalMaster();
+  ~LocalMaster();
   virtual void SendFinalReport() override;
   virtual void TakeRequests() override; 
   virtual void SendRequest(BaseRequest req) override;
   virtual void GetField() override;
   void GetRandomField();
   vector<std::shared_ptr<LocalWorker>> Slaves;
-  pthread_barrier_t WorkersBarrier;
-  pthread_barrier_t MasterBarrier;
   vector<vector<vector<int>>> FieldsToSend;
   vector<BaseRequest> RequestsToSend;
-
-
 };
 
-class ThreadMaster: public LocalMaster 
-{
-public:
-  ThreadMaster(int);
-  ~ThreadMaster();
-  virtual void WorkersSync() override; 
-  virtual void InitWorkers() override;
-};

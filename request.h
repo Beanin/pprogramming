@@ -11,15 +11,6 @@ inline void PrintHelpMessage() {
   std::cout << "STOP      : Stops game calculating\n";
   std::cout << "QUIT      : Closes the program\n";
 }
-/*
-  STOP
-  START
-  RUN X
-  QUIT
-
-  STATUS
-  HELP
- */
   
 class BaseRequest { 
 public:

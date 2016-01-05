@@ -1,0 +1,11 @@
+thread: threadmain.cpp worker.o master.o thread.o
+	g++ -std=c++11 -pthread threadmain.cpp worker.o master.o thread.o
+worker.o: worker.cpp
+	g++ -c -std=c++11 worker.cpp
+master.o: master.cpp
+	g++ -c -std=c++11 master.cpp
+thread.o: threadworker.cpp threadmaster.cpp
+	g++ -c -std=c++11 -pthread threadworker.cpp threadmaster.cpp
+
+clean:
+	rm -rf *.o
