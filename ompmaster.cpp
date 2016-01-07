@@ -8,21 +8,6 @@ OmpMaster::OmpMaster(int i)
 	omp_set_num_threads(i);
 }
 
-/*void* OmpMaster::Handle() 
-{
-  while (State != ENDED) 
-  {
-  	#pragma omp sections 
-  	{
-  		#pragma omp section1 
-      TakeRequests();
-      #pragma omp section2 
-      HandleRequest();
-      Report();
-    }
-  }    
-}*/
-
 void OmpMaster::SendFinalReport()
 {
 	Field = OldField;

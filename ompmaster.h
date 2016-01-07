@@ -35,5 +35,4 @@ public:
 	virtual void HandleOtherRequests() override; 
 	virtual void Calculate() override; 
 	virtual void InitWorkers() override;
-	//void* Handle(); 
 };

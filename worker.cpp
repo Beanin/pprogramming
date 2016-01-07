@@ -7,19 +7,18 @@
 
 #include "worker.h"
 
-
 void* BaseWorker::Handle() 
 {
   while (State != ENDED) 
   {
     TakeRequests();
     HandleRequest();
-    Report();
   }    
 }
 
 void BaseWorker::HandleRequest()
 {
+  //if (Id!=0) printf("HANDLE.Id:%d\n",);
   if (State == RUNNING && Requests.empty())
   {
     Calculate();
@@ -66,8 +65,23 @@ void BaseWorker::HandleOtherRequests()
   Requests.pop_front();
 }
 
+void BaseWorker::Calculate()
+{
+  for (size_t y = 1; y < OldField.size() - 1; ++y)
+  {
+    for (size_t x = 0; x < OldField[0].size(); ++x)
+    {
+      if ((OldField[y][x] == 1) && (NeighboursCount(x, y) == 3 || NeighboursCount(x, y) == 2))
+        Field[y][x] = true;
+      else if ((OldField[y][x] == 0) && NeighboursCount(x, y) == 3)
+        Field[y][x] = true;
+      else Field[y][x] = false;   
+    }
+  }
+  Field.swap(OldField);
+}
 
-size_t LocalWorker::NeighboursCount(size_t x, size_t y) 
+size_t BaseWorker::NeighboursCount(size_t x, size_t y) 
 {
   size_t Cnt = 0;
   for (int i = -1; i < 2; ++i) 
@@ -75,7 +89,8 @@ size_t LocalWorker::NeighboursCount(size_t x, size_t y)
     for (int j = -1; j < 2; ++j) 
     {
       if (i*i + j*j > 0)
-        Cnt+= OldField[(OldField.size() + y + i) % OldField.size()][(OldField[0].size()+ j+ x) % OldField[0].size()];
+        if (OldField[(OldField.size() + y + i) % OldField.size()][(OldField[0].size()+ j+ x) % OldField[0].size()])
+          Cnt++;         
     }
   }
   return Cnt;
@@ -92,34 +107,6 @@ void LocalWorker::ReceiveCalculations()
 
   OldField[0] = (*ReceiveFieldTop);
   OldField.back() = (*ReceiveFieldBottom);
-}
-
-
-void LocalWorker::TakeRequests()
-{
-  SyncWithMaster();
-  SyncWithMaster();
-  for (; RequestQueuePosition < RequestsFromMaster->size(); ++RequestQueuePosition)
-  {
-    Requests.push_back((*RequestsFromMaster)[RequestQueuePosition]);
-  }
-}
-
-
-void LocalWorker::Calculate()
-{
-  for (size_t y = 1; y < OldField.size() - 1; ++y)
-  {
-    for (size_t x = 0; x < OldField[0].size(); ++x)
-    {
-      if (OldField[y][x] && (NeighboursCount(x, y) == 3 || NeighboursCount(x, y) == 4))
-        Field[y][x] = 1;
-      else if (OldField[y][x] == 0 && NeighboursCount(x, y) == 3)
-        Field[y][x] = 1;
-      else Field[y][x] = 0;   
-    }
-  }
-  Field.swap(OldField);
 }
 
 LocalWorker::LocalWorker(unsigned number, LocalWorkerData localData):LocalWorkerData(localData)

@@ -17,6 +17,7 @@ public:
   BaseRequest(std::string type, size_t IterCount_ = 0):Type(type), IterCount(IterCount_) {
     CreationTime = clock();
   }
+  BaseRequest() = default;
   time_t GetCreationTime() {
     return CreationTime;
   }
@@ -31,10 +32,12 @@ public:
     return s == Type;
   }
   virtual ~BaseRequest() = default; 
-private: 
+public: 
   time_t CreationTime;
   std::string Type;
   size_t IterCount;
+  int y;
+  int x; 
 };
 
 

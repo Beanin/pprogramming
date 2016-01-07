@@ -1,0 +1,2 @@
+all: mpimain.cpp worker.cpp master.cpp mpiworker.cpp mpimaster.cpp
+	mpiCC -std=c++11 mpimain.cpp worker.cpp master.cpp mpiworker.cpp mpimaster.cpp

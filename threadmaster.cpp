@@ -1,6 +1,8 @@
 #include "threadmaster.h"
 
 void ThreadMaster::InitWorkers() {
+  FieldsToSend.resize(WorkersCount);
+  
   ThreadWorkerDataCommon threadCommon;
   threadCommon.WorkersBarrier = &WorkersBarrier;
   threadCommon.MasterBarrier = &MasterBarrier;
@@ -22,9 +24,7 @@ void ThreadMaster::InitWorkers() {
     localData.SendFieldTop = &FieldsToSend[(i + WorkersCount - 1) % WorkersCount].back();
     localData.ReceiveFieldBottom = &FieldsToSend[i][FieldsToSend[i].size() - 1];
     localData.ReceiveFieldTop = &FieldsToSend[i][0];
-    localData.RequestsFromMaster = &RequestsToSend;
-    localData.RequestQueuePosition = 0;
-    Slaves.push_back(std::shared_ptr<ThreadWorker>(new ThreadWorker(i, localData, threadCommon)));
+    Slaves.push_back(std::shared_ptr<ThreadWorker>(new ThreadWorker(i, localData, threadCommon, &RequestsToSend)));
   }
 }
 

@@ -10,4 +10,5 @@ public:
   virtual void InitWorkers() override;
   pthread_barrier_t WorkersBarrier;
   pthread_barrier_t MasterBarrier;
+  vector<std::shared_ptr<ThreadWorker>> Slaves;
 };

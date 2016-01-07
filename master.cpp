@@ -21,7 +21,8 @@ void PrintField(const vector<vector<int>> &f) {
   {
     for (size_t j = 0; j < f[0].size(); ++j)
     {
-      printf("%d ",f[i][j]);   
+      char ch = f[i][j] ? 'x' : 'o'; 
+      printf("%c ",ch);   
     }
     printf("\n");
   }
@@ -42,7 +43,7 @@ LocalMaster::~LocalMaster()
 
 void LocalMaster::TakeRequests() 
 {
-  bool Passed = IterNumber % 3 > 0;
+  bool Passed = false;//IterNumber % 3 > 0;
   while (!Passed || (State != RUNNING && Requests.empty())) 
   {
     int Read = read(STDIN_FILENO, StreamEnd, 100);
@@ -87,8 +88,10 @@ void LocalMaster::TakeRequests()
       while (*Cur != '\n')
         Cur++;
       Cur++;
-      FieldsToSend.resize(WorkersCount);
-      Requests.push_back(BaseRequest("START"));
+      BaseRequest req = BaseRequest("START");
+      req.y = Height;
+      req.x = Width;
+      Requests.push_back(req);
     }
     else if (StreamEnd - Cur > 1) {
       Cur++;
@@ -101,6 +104,7 @@ void BaseMaster::HandleRequest()
 {
   if (State == RUNNING && Requests.empty())
   {
+    Pass();
     WorkersSync();
     WorkersSync();
     Calculate();

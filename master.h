@@ -15,7 +15,7 @@ public:
   virtual void CollabSync() override {}
   virtual void SyncWithMaster() override {}
   virtual void Calculate() override {}
-
+  virtual void Pass() {}
   virtual void HandleRequest() override;
 
   virtual void InitWorkers() = 0;
@@ -34,7 +34,6 @@ public:
   virtual void SendRequest(BaseRequest req) override;
   virtual void GetField() override;
   void GetRandomField();
-  vector<std::shared_ptr<LocalWorker>> Slaves;
   vector<vector<vector<int>>> FieldsToSend;
   vector<BaseRequest> RequestsToSend;
 };
