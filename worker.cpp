@@ -49,8 +49,9 @@ void BaseWorker::HandleRequest()
     State = STOPPED;
     Requests.pop_front();
     ClearRequests();
+    State = ENDED;
   }
-  else if (Requests.front() == "QUIT" && State == STOPPED)
+  else if (Requests.front() == "QUIT")
   {
     State = ENDED;
   }  

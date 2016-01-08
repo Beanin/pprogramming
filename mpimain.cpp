@@ -29,8 +29,11 @@ int main(int argc, char** argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	if (rank == 0)
 	{
+		double start = MPI_Wtime();
 		MpiMaster master(WorkersCount);
-		master.Handle();	
+		master.Handle();
+		double end = MPI_Wtime();
+		printf("WTime:%f", end - start);	
 	}
 	else 
 	{

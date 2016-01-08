@@ -1,5 +1,5 @@
 all: threadmain.cpp worker.cpp master.cpp threadworker.cpp threadmaster.cpp
 	g++ -std=c++11 -pthread threadmain.cpp worker.cpp master.cpp \
-threadworker.cpp threadmaster.cpp
+threadworker.cpp threadmaster.cpp -o threads.exe
 
 

@@ -117,6 +117,7 @@ void BaseMaster::HandleRequest()
       SendFinalReport();
       State = STOPPED;
       ClearRequests();
+      State = ENDED;
     }
   }
   if (Requests.empty())
@@ -141,7 +142,7 @@ void BaseMaster::HandleRequest()
     State = STOPPED;
     ClearRequests();
   }
-  else if (Requests.front() == "QUIT" && State == STOPPED)
+  else if (Requests.front() == "QUIT")
   {
     SendRequest(Requests.front());
     State = ENDED;
