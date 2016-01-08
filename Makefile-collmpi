@@ -1,2 +1,2 @@
 all: mpimain.cpp worker.cpp master.cpp collmpiworker.cpp collmpimaster.cpp
-	mpiCC -std=c++11 mpimain.cpp worker.cpp master.cpp collmpiworker.cpp collmpimaster.cpp
+	mpiCC -std=c++11 mpimain.cpp worker.cpp master.cpp collmpiworker.cpp collmpimaster.cpp -o collmpi.exe
