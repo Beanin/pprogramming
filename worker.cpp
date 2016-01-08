@@ -72,10 +72,10 @@ void BaseWorker::Calculate()
     for (size_t x = 0; x < OldField[0].size(); ++x)
     {
       if ((OldField[y][x] == 1) && (NeighboursCount(x, y) == 3 || NeighboursCount(x, y) == 2))
-        Field[y][x] = true;
+        Field[y][x] = 1;
       else if ((OldField[y][x] == 0) && NeighboursCount(x, y) == 3)
-        Field[y][x] = true;
-      else Field[y][x] = false;   
+        Field[y][x] = 0;
+      else Field[y][x] = 0;   
     }
   }
   Field.swap(OldField);
@@ -89,7 +89,7 @@ size_t BaseWorker::NeighboursCount(size_t x, size_t y)
     for (int j = -1; j < 2; ++j) 
     {
       if (i*i + j*j > 0)
-        if (OldField[(OldField.size() + y + i) % OldField.size()][(OldField[0].size()+ j+ x) % OldField[0].size()])
+        if (OldField[(OldField.size() + y + i) % OldField.size()][(OldField[0].size()+ j + x) % OldField[0].size()])
           Cnt++;         
     }
   }

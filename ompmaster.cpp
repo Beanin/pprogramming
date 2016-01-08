@@ -35,7 +35,9 @@ void OmpMaster::InitWorkers()
 	SendFieldTop = &OldField.back();
 	SendFieldBottom = &OldField[0];
 	ReceiveFieldTop = &OldField[Field.size() - 1];
+  OldField[0] = *ReceiveFieldTop;
 	ReceiveFieldBottom = &OldField[1];
+  OldField.back() = *ReceiveFieldBottom;
 }
 
 void OmpMaster::Calculate()
